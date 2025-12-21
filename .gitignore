@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Environment variables
 .env
@@ -33,9 +32,6 @@ certs/*.cer
 
 # Files directory (may contain sensitive data)
 files/
-
-# Docker
-.dockerignore
 
 # TypeScript
 *.tsbuildinfo
