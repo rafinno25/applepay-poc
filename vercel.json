@@ -8,6 +8,20 @@
   ],
   "routes": [
     {
+      "src": "/.well-known/apple-developer-merchantid-domain-association",
+      "dest": "/public/.well-known/apple-developer-merchantid-domain-association",
+      "headers": {
+        "Content-Type": "text/plain"
+      }
+    },
+    {
+      "src": "/.well-known/apple-developer-merchantid-domain-association.txt",
+      "dest": "/public/.well-known/apple-developer-merchantid-domain-association.txt",
+      "headers": {
+        "Content-Type": "text/plain"
+      }
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/server/index.js"
     },

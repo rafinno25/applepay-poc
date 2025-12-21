@@ -23,7 +23,31 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory
+// Serve Apple Pay domain association file with correct content type
+app.get('/.well-known/apple-developer-merchantid-domain-association', (req, res) => {
+  const filePath = join(__dirname, '../public/.well-known/apple-developer-merchantid-domain-association');
+  
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Domain association file not found');
+  }
+});
+
+// Also serve with .txt extension for compatibility
+app.get('/.well-known/apple-developer-merchantid-domain-association.txt', (req, res) => {
+  const filePath = join(__dirname, '../public/.well-known/apple-developer-merchantid-domain-association');
+  
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Domain association file not found');
+  }
+});
+
+// Serve other static files from public directory
 app.use('/.well-known', express.static(join(__dirname, '../public/.well-known')));
 
 // In production, serve built Vite assets
@@ -41,6 +65,10 @@ if (config.nodeEnv === 'production') {
     // Don't serve index.html for API routes
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'Not found' });
+    }
+    // Don't serve index.html for .well-known routes (already handled above)
+    if (req.path.startsWith('/.well-known')) {
+      return res.status(404).send('Not found');
     }
     // Try multiple possible locations for index.html
     const possiblePaths = [
