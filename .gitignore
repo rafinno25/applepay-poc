@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+
+# OS files
+.DS_Store
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Certificates and sensitive files
+certs/*.pem
+certs/*.key
+certs/*.cer
+*.p12
+*.key
+*.pem
+*.cer
+
+# Files directory (may contain sensitive data)
+files/
+
+# Docker
+.dockerignore
+
+# TypeScript
+*.tsbuildinfo
+
+# Vercel
+.vercel
+

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple Pay POC - Authorize.Net Integration</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <div class="apple-pay-test-page">
+    <div class="test-container">
+      <div class="test-header">
+        <h1>
+          <svg class="apple-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="currentColor"/>
+          </svg>
+          Apple Pay Test Playground
+        </h1>
+        <p class="subtitle">
+          Test Apple Pay integration without going through the full registration flow
+        </p>
+      </div>
+
+      <div class="test-info">
+        <div class="info-card">
+          <h3>User ID</h3>
+          <div class="user-id-input-container">
+            <input
+              type="text"
+              id="userId"
+              name="userId"
+              placeholder="Enter User ID or generate UUID"
+              class="user-id-input"
+            />
+            <button
+              id="generateUuidBtn"
+              class="generate-uuid-btn"
+            >
+              Generate UUID
+            </button>
+          </div>
+          <small>This is a test user ID for playground testing</small>
+        </div>
+
+        <div class="info-card">
+          <h3>Environment</h3>
+          <p id="environmentDisplay">development</p>
+          <small>Current environment mode</small>
+        </div>
+
+        <div class="info-card">
+          <h3>Merchant ID</h3>
+          <p id="merchantIdDisplay">-</p>
+          <small>Apple Pay merchant identifier</small>
+        </div>
+
+        <div class="info-card" id="connectionCard">
+          <h3>Connection</h3>
+          <p id="connectionDisplay">-</p>
+          <small id="connectionDescription">Checking connection status...</small>
+        </div>
+      </div>
+
+      <div class="test-actions">
+        <button 
+          id="checkApplePayBtn"
+          class="test-button secondary"
+        >
+          Check Apple Pay Support
+        </button>
+      </div>
+
+      <div class="payment-section">
+        <h2>Test Payment</h2>
+        <div class="payment-box">
+          <div class="payment-info">
+            <h3>Test Transaction</h3>
+            <p>Amount: <strong id="paymentAmount">$10.00</strong></p>
+            <p>Description: <strong>Apple Pay POC Transaction</strong></p>
+          </div>
+          
+          <div id="applePayContainer" class="hidden">
+            <div class="apple-pay-label">Pay with Apple Pay</div>
+            <div id="applePayButtonWrapper" style="cursor: pointer;">
+              <div id="applePayButton" class="apple-pay-button"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="statusMessage" class="status-message hidden"></div>
+
+      <div class="logs-section">
+        <div class="logs-header">
+          <h3>Test Logs</h3>
+          <div class="logs-header-actions">
+            <button id="downloadLogsBtn" class="logs-action-btn download-btn" title="Download logs as TXT">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Download
+            </button>
+            <button id="copyLogsBtn" class="logs-action-btn copy-btn" title="Copy logs to clipboard">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy
+            </button>
+            <button id="clearLogsBtnBottom" class="logs-action-btn clear-btn">Clear</button>
+          </div>
+        </div>
+        <div class="logs-container">
+          <div id="logDisplay">
+            <p class="no-logs">No logs yet. Start testing to see logs here.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="instructions">
+        <h3>📋 Instructions</h3>
+        <ol>
+          <li>Click "Check Apple Pay Support" to verify Apple Pay is available</li>
+          <li>Click "Pay with Apple Pay" button to start the payment flow</li>
+          <li>Complete the Apple Pay authorization in the payment sheet</li>
+          <li>View the transaction result and check the logs below</li>
+          <li>Check the logs below for detailed information</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

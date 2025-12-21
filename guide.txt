@@ -1,0 +1,112 @@
+High-Level Technical Scope: Add Apple Pay to Web Checkout (Authorize.Net)
+1. Overview
+https://github.com/ryanfs/ai-protection
+
+We want to add Apple Pay as a payment method in our JavaScript web app.
+ Payments must continue to be processed through Authorize.Net.
+This integration consists of:
+Enabling Apple Pay on our domain
+
+
+Implementing Apple Pay in the frontend
+
+
+Performing Apple Pay merchant validation on our backend
+
+
+Sending Apple Pay tokens to Authorize.Net to process the payment
+
+2. Required Setup
+Apple Developer Setup
+Create/verify an Apple Pay Merchant ID
+ URL: developer.apple.com/account/resources/identifiers/list
+
+
+Generate the required certificates (Merchant Identity + Payment Processing)
+
+
+Verify our domain for Apple Pay by hosting the domain association file
+ URL: developer.apple.com/documentation/apple_pay_on_the_web/applepaymerchantidentity
+
+
+Enable Apple Pay sandbox for testing
+ URL: developer.apple.com/apple-pay/sandbox-testing/
+
+Authorize.Net Setup
+Enable Apple Pay under Digital Payment Solutions in Authorize.Net
+
+
+Upload or provide the Apple Merchant ID and required certificates
+
+
+Confirm Apple Pay is enabled in both sandbox and production
+
+
+Review Authorize.Net’s Apple Pay token format
+ URL: developer.authorize.net/api/reference/features/digital_payments.html
+3. Front-End Work
+A. Show Apple Pay Button
+Detect Apple Pay support: window.ApplePaySession
+
+
+If available, show an “Apple Pay” button in checkout
+
+
+Button appears only on Safari with Apple Pay configured
+
+
+B. Apple Pay Session
+When the user taps the button:
+
+
+Create a new ApplePaySession with total amount and cart details
+
+
+Trigger backend merchant validation (required by Apple)
+
+
+Present Apple Pay sheet to the user
+
+
+C. Get Apple Pay Token
+After user authorizes payment, Apple returns a payment token
+
+
+Send this token to our backend to process the charge
+
+
+Documentation reference:
+ developer.apple.com/documentation/apple_pay_on_the_web
+
+4. Backend Work
+A. Merchant Validation Endpoint
+Required by Apple Pay.
+ Backend receives a validation URL → calls Apple’s servers using our Merchant Identity Certificate → returns the merchant session to the frontend.
+Documentation reference:
+ developer.apple.com/documentation/apple_pay_on_the_web/applepaysession/1778021-onvalidatemerchant
+B. Payment Processing Endpoint
+Backend receives:
+Apple Pay token
+
+
+Amount
+
+
+Order info
+
+
+Backend sends the Apple Pay token to Authorize.Net using their digital payments / Apple Pay token format to create a transaction.
+Documentation reference:
+ developer.authorize.net/api/reference/features/digital_payments.html
+
+5. Testing Plan
+Use Apple Pay sandbox testers + sandbox cards
+
+
+Test merchant validation flow (required for checkout to open)
+
+
+Test successful payment, declined payment, and cancellation
+
+
+Confirm charges appear correctly in Authorize.Net sandbox

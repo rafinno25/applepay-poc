@@ -1,0 +1,17 @@
+# PLACEHOLDER FILE - REPLACE WITH ACTUAL DOMAIN ASSOCIATION FILE
+# 
+# This file must be replaced with the actual domain association file
+# provided by Apple Developer Portal.
+# 
+# Steps to get the actual file:
+# 1. Go to https://developer.apple.com/account/resources/identifiers/list
+# 2. Select your Merchant ID
+# 3. Download the domain association file
+# 4. Replace this file with the downloaded file
+# 
+# The file must be accessible at:
+# https://yourdomain.com/.well-known/apple-developer-merchantid-domain-association
+# 
+# File should NOT have any file extension
+# File should be served with Content-Type: text/plain
+

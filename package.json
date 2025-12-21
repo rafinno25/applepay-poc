@@ -1,0 +1,39 @@
+{
+  "name": "applepay-poc",
+  "version": "1.0.0",
+  "description": "Apple Pay POC with Authorize.Net integration",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "vercel-build": "npm run build"
+  },
+  "keywords": [
+    "apple-pay",
+    "authorize-net",
+    "payment",
+    "poc"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8",
+    "concurrently": "^8.2.2",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}
+
