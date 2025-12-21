@@ -31,6 +31,9 @@ class ApplePayApp {
     // Load configuration from backend
     await this.loadConfig();
 
+    // Show button immediately (will be refined by checkApplePaySupport)
+    this.showApplePayButton();
+
     // Check Apple Pay availability (with delay to ensure merchant ID is loaded)
     setTimeout(() => {
       this.checkApplePaySupport();
@@ -310,7 +313,9 @@ class ApplePayApp {
     const button = document.getElementById('applePayButton');
     
     if (container && wrapper) {
+      // Always remove hidden class
       container.classList.remove('hidden');
+      container.style.display = 'block';
       
       // Add click handler to wrapper (only once)
       if (!wrapper.dataset.handlerAttached) {
@@ -320,6 +325,13 @@ class ApplePayApp {
         wrapper.dataset.handlerAttached = 'true';
       }
       
+      // Ensure button is visible
+      if (button) {
+        button.style.display = '-apple-pay-button';
+        button.style.visibility = 'visible';
+        button.style.opacity = '1';
+      }
+      
       // If Apple Pay button doesn't render (not in Safari), show fallback button
       setTimeout(() => {
         if (button && (!window.ApplePaySession || button.offsetHeight === 0)) {
@@ -327,11 +339,18 @@ class ApplePayApp {
           button.style.display = 'block';
           logger.info('Fallback Apple Pay button displayed (Apple Pay not available in this browser)');
         }
-      }, 500);
+      }, 1000);
       
-      logger.event('Apple Pay Button Displayed');
+      logger.event('Apple Pay Button Displayed', {
+        containerVisible: container.style.display,
+        buttonExists: !!button,
+        applePaySession: !!window.ApplePaySession
+      });
     } else {
-      logger.warn('Apple Pay button container not found');
+      logger.warn('Apple Pay button container not found', {
+        container: !!container,
+        wrapper: !!wrapper
+      });
     }
   }
 
