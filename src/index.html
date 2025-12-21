@@ -79,10 +79,13 @@
             <p>Description: <strong>Apple Pay POC Transaction</strong></p>
           </div>
           
-          <div id="applePayContainer">
+          <div id="applePayContainer" style="display: block !important; visibility: visible !important; margin-top: 1rem;">
             <div class="apple-pay-label">Pay with Apple Pay</div>
-            <div id="applePayButtonWrapper" style="cursor: pointer; min-height: 48px;">
-              <div id="applePayButton" class="apple-pay-button"></div>
+            <div id="applePayButtonWrapper" style="cursor: pointer; min-height: 48px; width: 100%; display: block !important; visibility: visible !important;">
+              <!-- Apple Pay native button (only visible in Safari with Apple Pay) -->
+              <div id="applePayButton" class="apple-pay-button" style="display: -apple-pay-button !important; width: 100%; min-height: 48px; visibility: visible !important; opacity: 1 !important;"></div>
+              <!-- Fallback button (always visible for testing) -->
+              <button id="applePayFallbackButton" style="width: 100%; height: 48px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: none; align-items: center; justify-content: center; margin-top: 10px;">Pay with Apple Pay</button>
             </div>
           </div>
         </div>

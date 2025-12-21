@@ -327,19 +327,67 @@ class ApplePayApp {
       
       // Ensure button is visible
       if (button) {
-        button.style.display = '-apple-pay-button';
-        button.style.visibility = 'visible';
-        button.style.opacity = '1';
+        button.style.setProperty('display', '-apple-pay-button', 'important');
+        button.style.setProperty('visibility', 'visible', 'important');
+        button.style.setProperty('opacity', '1', 'important');
+        button.style.setProperty('width', '100%', 'important');
+        button.style.setProperty('min-height', '48px', 'important');
       }
       
-      // If Apple Pay button doesn't render (not in Safari), show fallback button
+      // Ensure wrapper is visible
+      if (wrapper) {
+        wrapper.style.setProperty('display', 'block', 'important');
+        wrapper.style.setProperty('visibility', 'visible', 'important');
+        wrapper.style.setProperty('width', '100%', 'important');
+        wrapper.style.setProperty('min-height', '48px', 'important');
+      }
+      
+      // Setup fallback button click handler
+      const fallbackButton = document.getElementById('applePayFallbackButton');
+      if (fallbackButton && !fallbackButton.dataset.handlerAttached) {
+        fallbackButton.addEventListener('click', () => {
+          this.initiateApplePay();
+        });
+        fallbackButton.dataset.handlerAttached = 'true';
+      }
+      
+      // Show fallback button immediately for testing (will be hidden if native button works)
+      if (fallbackButton) {
+        fallbackButton.style.setProperty('display', 'flex', 'important');
+      }
+      
+      // Check if native button rendered after a delay
       setTimeout(() => {
-        if (button && (!window.ApplePaySession || button.offsetHeight === 0)) {
-          button.innerHTML = '<button style="width: 100%; height: 48px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center;">Pay with Apple Pay</button>';
-          button.style.display = 'block';
-          logger.info('Fallback Apple Pay button displayed (Apple Pay not available in this browser)');
+        const buttonHeight = button ? button.offsetHeight : 0;
+        const buttonWidth = button ? button.offsetWidth : 0;
+        const computedDisplay = button ? window.getComputedStyle(button).display : 'N/A';
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        logger.info('Button check', {
+          buttonHeight,
+          buttonWidth,
+          hasApplePaySession: !!window.ApplePaySession,
+          buttonDisplay: computedDisplay,
+          isSafari: isSafari,
+          buttonVisible: buttonHeight > 0 && buttonWidth > 0
+        });
+        
+        // If native Apple Pay button rendered successfully, hide fallback
+        if (button && fallbackButton) {
+          if (window.ApplePaySession && buttonHeight > 0 && buttonWidth > 0 && computedDisplay === '-apple-pay-button') {
+            // Native button is working, hide fallback
+            fallbackButton.style.setProperty('display', 'none', 'important');
+            logger.info('Native Apple Pay button is displayed and working');
+          } else {
+            // Native button not working, keep fallback visible
+            if (button) {
+              button.style.setProperty('display', 'none', 'important');
+            }
+            fallbackButton.style.setProperty('display', 'flex', 'important');
+            logger.info('Fallback Apple Pay button displayed (native button not available or not rendering)');
+          }
         }
-      }, 1000);
+      }, 1500);
       
       logger.event('Apple Pay Button Displayed', {
         containerVisible: container.style.display,

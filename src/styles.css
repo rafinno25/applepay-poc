@@ -217,22 +217,32 @@
 
 /* Apple Pay Button Styles */
 .apple-pay-button {
-  display: -apple-pay-button;
+  display: -apple-pay-button !important;
   -apple-pay-button-type: pay;
   -apple-pay-button-style: black;
-  width: 100%;
-  min-height: 48px;
-  height: 48px;
+  width: 100% !important;
+  min-height: 48px !important;
+  height: 48px !important;
   margin: 10px 0;
   border-radius: 8px;
   visibility: visible !important;
   opacity: 1 !important;
+  position: relative !important;
 }
 
 /* Ensure container is visible */
 #applePayContainer {
   display: block !important;
   visibility: visible !important;
+  opacity: 1 !important;
+  margin-top: 1rem;
+}
+
+#applePayButtonWrapper {
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+  min-height: 48px !important;
 }
 
 /* Fallback for browsers without Apple Pay support */
