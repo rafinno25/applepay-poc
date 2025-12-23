@@ -136,6 +136,22 @@ class AuthorizeNetService {
       if (resultCodeMatch) {
         result.messages.resultCode = resultCodeMatch[1];
       }
+      
+      // Extract message errors
+      const messageErrors = [];
+      const messageErrorMatches = messagesXml.matchAll(/<message>([\s\S]*?)<\/message>/g);
+      for (const messageErrorMatch of messageErrorMatches) {
+        const messageErrorXml = messageErrorMatch[1];
+        const codeMatch = messageErrorXml.match(/<code>(.*?)<\/code>/);
+        const textMatch = messageErrorXml.match(/<text>(.*?)<\/text>/);
+        messageErrors.push({
+          code: codeMatch ? codeMatch[1] : '',
+          text: textMatch ? textMatch[1] : '',
+        });
+      }
+      if (messageErrors.length > 0) {
+        result.messages.message = messageErrors;
+      }
     }
 
     return result;
@@ -156,23 +172,38 @@ class AuthorizeNetService {
 
     try {
       // Extract data from Apple Pay token
-      // Apple Pay token structure: { paymentData: { data: "...", header: {...}, signature: "..." } }
+      // Apple Pay token structure: { paymentData: { data: "...", header: {...}, signature: "..." }, paymentMethod: {...}, transactionIdentifier: "..." }
       const applePayToken = typeof paymentToken === 'string' 
         ? JSON.parse(paymentToken) 
         : paymentToken;
 
-      // For Authorize.Net, we need to send the encrypted payment data
-      // Authorize.Net expects opaqueData format with dataDescriptor and dataValue
-      // Note: The exact format depends on Authorize.Net's Apple Pay integration requirements
-      // This is a simplified version - actual implementation may vary based on Authorize.Net docs
+      // For Authorize.Net Apple Pay integration:
+      // dataDescriptor must be "COMMON.APPLE.INAPP.PAYMENT"
+      // dataValue: According to Authorize.Net docs, we should send the paymentData.data field directly
+      // (it's already Base64 encoded from Apple Pay)
+      // Reference: https://developer.authorize.net/api/reference/features/apple_pay.html
+      
+      // Extract paymentData.data which is already Base64 encoded from Apple
+      const paymentDataValue = applePayToken.paymentData?.data;
+      
+      if (!paymentDataValue) {
+        throw new Error('Apple Pay token missing paymentData.data field');
+      }
 
       // Create transaction request
+      // Authorize.Net limits invoiceNumber to 20 characters max
+      const invoiceNumber = orderInfo.invoiceNumber 
+        ? orderInfo.invoiceNumber.slice(0, 20)
+        : `INV-${Date.now()}`.slice(0, 20);
+      
       const transactionData = {
         refId: orderInfo.orderId || `ORDER-${Date.now()}`,
         amount: amount.toFixed(2),
-        dataDescriptor: applePayToken.paymentData?.header?.publicKeyHash || 'COMMON.APPLE.INAPP.PAYMENT',
-        dataValue: applePayToken.paymentData?.data || '',
-        invoiceNumber: orderInfo.invoiceNumber || `INV-${Date.now()}`,
+        // Authorize.Net requires this specific descriptor for Apple Pay
+        dataDescriptor: 'COMMON.APPLE.INAPP.PAYMENT',
+        // paymentData.data is already Base64 encoded from Apple Pay
+        dataValue: paymentDataValue,
+        invoiceNumber: invoiceNumber,
         description: orderInfo.description || 'Apple Pay Payment',
         customerId: userId || '',
         email: orderInfo.email || '',
@@ -188,7 +219,8 @@ class AuthorizeNetService {
         amount: transactionData.amount,
         invoiceNumber: transactionData.invoiceNumber,
         dataDescriptor: transactionData.dataDescriptor,
-        // Don't log sensitive dataValue
+        dataValueLength: transactionData.dataValue?.length || 0,
+        // Don't log sensitive dataValue content
       });
 
       // Make API request
@@ -207,15 +239,26 @@ class AuthorizeNetService {
         resultCode: parsedResponse.messages.resultCode,
         responseCode: parsedResponse.transactionResponse.responseCode,
         transId: parsedResponse.transactionResponse.transId,
-        errors: parsedResponse.transactionResponse.errors,
+        transactionErrors: parsedResponse.transactionResponse.errors,
+        messageErrors: parsedResponse.messages.message,
       });
 
-      // Check for errors
+      // Check for errors at messages level
       if (parsedResponse.messages.resultCode !== 'Ok') {
-        const error = new Error('Authorize.Net transaction failed');
+        const errorMessages = parsedResponse.messages.message || [];
+        const transactionErrors = parsedResponse.transactionResponse.errors || [];
+        const allErrors = [...errorMessages, ...transactionErrors];
+        
+        const errorMessage = allErrors.length > 0 
+          ? allErrors.map(e => e.text || e.errorText || e.code || e.errorCode).join('; ')
+          : 'Authorize.Net transaction failed';
+        
+        const error = new Error(errorMessage);
         error.authorizeNetError = {
           resultCode: parsedResponse.messages.resultCode,
-          errors: parsedResponse.transactionResponse.errors || [],
+          errors: allErrors,
+          messageErrors: errorMessages,
+          transactionErrors: transactionErrors,
           response: parsedResponse,
         };
         throw error;
@@ -246,13 +289,28 @@ class AuthorizeNetService {
       // Enhance error with Authorize.Net details
       if (error.response) {
         const parsedResponse = this.parseXmlResponse(error.response.data);
+        const errorMessages = parsedResponse.messages?.message || [];
+        const transactionErrors = parsedResponse.transactionResponse?.errors || [];
+        const allErrors = [...errorMessages, ...transactionErrors];
+        
         error.authorizeNetError = {
           status: error.response.status,
           statusText: error.response.statusText,
-          errors: parsedResponse.transactionResponse?.errors || [],
+          resultCode: parsedResponse.messages?.resultCode,
+          errors: allErrors,
+          messageErrors: errorMessages,
+          transactionErrors: transactionErrors,
           response: parsedResponse,
           rawResponse: error.response.data,
         };
+      } else if (error.authorizeNetError) {
+        // Error already has authorizeNetError from above
+        // Make sure errors array is properly populated
+        if (!error.authorizeNetError.errors || error.authorizeNetError.errors.length === 0) {
+          const messageErrors = error.authorizeNetError.messageErrors || [];
+          const transactionErrors = error.authorizeNetError.transactionErrors || [];
+          error.authorizeNetError.errors = [...messageErrors, ...transactionErrors];
+        }
       }
 
       // Log error for POC debugging

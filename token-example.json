@@ -1,0 +1,19 @@
+{
+  "paymentData": {
+    "data": "YOUR_BASE64_ENCODED_PAYMENT_DATA_HERE",
+    "signature": "YOUR_SIGNATURE_HERE",
+    "header": {
+      "publicKeyHash": "YOUR_PUBLIC_KEY_HASH_HERE",
+      "ephemeralPublicKey": "YOUR_EPHEMERAL_PUBLIC_KEY_HERE",
+      "transactionId": "YOUR_TRANSACTION_ID_HERE"
+    },
+    "version": "EC_v1"
+  },
+  "paymentMethod": {
+    "displayName": "Card Name",
+    "network": "MasterCard",
+    "type": "credit"
+  },
+  "transactionIdentifier": "YOUR_TRANSACTION_IDENTIFIER_HERE"
+}
+
