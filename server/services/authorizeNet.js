@@ -191,10 +191,25 @@ class AuthorizeNetService {
       }
 
       // Create transaction request
-      // Authorize.Net limits invoiceNumber to 20 characters max
+      // Authorize.Net limits:
+      // - invoiceNumber: 20 characters max
+      // - customer.id: 20 characters max
       const invoiceNumber = orderInfo.invoiceNumber 
         ? orderInfo.invoiceNumber.slice(0, 20)
         : `INV-${Date.now()}`.slice(0, 20);
+      
+      // Limit customer ID to 20 characters (Authorize.Net limit)
+      // If userId is a UUID (36 chars), use a shorter version or hash
+      let customerId = '';
+      if (userId && userId.trim() !== '') {
+        if (userId.length <= 20) {
+          customerId = userId;
+        } else {
+          // For UUIDs or long IDs, use first 20 characters or create a hash
+          // Using first 20 chars is simpler for POC
+          customerId = userId.slice(0, 20);
+        }
+      }
       
       const transactionData = {
         refId: orderInfo.orderId || `ORDER-${Date.now()}`,
@@ -205,7 +220,7 @@ class AuthorizeNetService {
         dataValue: paymentDataValue,
         invoiceNumber: invoiceNumber,
         description: orderInfo.description || 'Apple Pay Payment',
-        customerId: userId || '',
+        customerId: customerId,
         email: orderInfo.email || '',
         billingAddress: orderInfo.billingAddress || {},
       };
