@@ -12,6 +12,7 @@ class ApplePayApp {
     this.applePaySession = null;
     this.merchantId = ''; // Loaded from API
     this.paymentAmount = 10.00; // Loaded from API
+    this.isInitiating = false; // Flag to prevent double initiation
     
     this.init();
   }
@@ -319,7 +320,9 @@ class ApplePayApp {
       
       // Add click handler to wrapper (only once)
       if (!wrapper.dataset.handlerAttached) {
-        wrapper.addEventListener('click', () => {
+        wrapper.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           this.initiateApplePay();
         });
         wrapper.dataset.handlerAttached = 'true';
@@ -345,7 +348,9 @@ class ApplePayApp {
       // Setup fallback button click handler
       const fallbackButton = document.getElementById('applePayFallbackButton');
       if (fallbackButton && !fallbackButton.dataset.handlerAttached) {
-        fallbackButton.addEventListener('click', () => {
+        fallbackButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           this.initiateApplePay();
         });
         fallbackButton.dataset.handlerAttached = 'true';
@@ -407,6 +412,12 @@ class ApplePayApp {
    * Initiate Apple Pay payment
    */
   initiateApplePay() {
+    // Prevent double initiation
+    if (this.isInitiating) {
+      logger.info('Apple Pay initiation already in progress, ignoring duplicate call');
+      return;
+    }
+
     // Validate user ID
     if (!this.userId || this.userId.trim() === '') {
       const error = new Error('User ID is required');
@@ -430,12 +441,25 @@ class ApplePayApp {
       this.applePaySession = null;
     }
 
+    // Set flag to prevent double initiation
+    this.isInitiating = true;
+
     logger.event('Apple Pay Initiated', { userId: this.userId, amount: this.paymentAmount });
+
+    // Validate merchant ID is set
+    if (!this.merchantId || this.merchantId.trim() === '') {
+      const error = new Error('Merchant ID is not configured');
+      logger.error(error, { context: 'Initiating Apple Pay' });
+      this.showStatusMessage('Merchant ID is not configured. Please refresh the page.', 'error');
+      this.isInitiating = false;
+      return;
+    }
 
     // Create payment request
     const paymentRequest = {
       countryCode: 'US',
       currencyCode: 'USD',
+      merchantIdentifier: this.merchantId, // Explicitly set merchant identifier
       supportedNetworks: ['visa', 'masterCard', 'amex'],
       merchantCapabilities: ['supports3DS'],
       total: {
@@ -450,14 +474,35 @@ class ApplePayApp {
       ],
     };
 
+    logger.info('Payment request created', {
+      merchantId: this.merchantId,
+      amount: this.paymentAmount,
+      countryCode: paymentRequest.countryCode,
+      currencyCode: paymentRequest.currencyCode,
+    });
+
     // Create Apple Pay session
-    this.applePaySession = new ApplePaySession(3, paymentRequest);
+    try {
+      this.applePaySession = new ApplePaySession(3, paymentRequest);
+      logger.info('Apple Pay session object created', {
+        merchantId: this.merchantId,
+        sessionVersion: 3,
+      });
+    } catch (sessionError) {
+      logger.error(sessionError, { context: 'Creating Apple Pay Session' });
+      this.showStatusMessage('Failed to create Apple Pay session. Please check your configuration.', 'error');
+      this.isInitiating = false;
+      return;
+    }
 
     // Handle merchant validation
     this.applePaySession.onvalidatemerchant = (event) => {
       logger.event('Apple Pay: Merchant Validation Requested', {
         validationURL: event.validationURL,
       });
+
+      // Reset initiation flag when validation starts
+      this.isInitiating = false;
 
       this.validateMerchant(event.validationURL);
     };
@@ -481,6 +526,8 @@ class ApplePayApp {
       this.showStatusMessage('Payment was cancelled', 'info');
       // Clear session reference when cancelled
       this.applePaySession = null;
+      // Reset initiation flag
+      this.isInitiating = false;
     };
 
     // Handle errors
@@ -489,21 +536,35 @@ class ApplePayApp {
       logger.error(error, {
         context: 'Apple Pay Session',
         errorMessage: event.message,
+        errorCode: event.code,
       });
       this.showStatusMessage(`Apple Pay Error: ${event.message || 'Unknown error'}`, 'error');
       // Clear session reference on error
       this.applePaySession = null;
+      // Reset initiation flag
+      this.isInitiating = false;
     };
 
     // Begin session
     try {
       this.applePaySession.begin();
       logger.info('Apple Pay session started');
+      
+      // Add timeout to reset flag if merchant validation doesn't start
+      // This handles cases where session is cancelled before validation
+      setTimeout(() => {
+        if (this.isInitiating) {
+          logger.info('Merchant validation did not start within 2 seconds, resetting initiation flag');
+          this.isInitiating = false;
+        }
+      }, 2000);
     } catch (error) {
       logger.error(error, { context: 'Starting Apple Pay session' });
       this.showStatusMessage('Failed to start Apple Pay session', 'error');
       // Clear session reference if begin() fails
       this.applePaySession = null;
+      // Reset initiation flag
+      this.isInitiating = false;
     }
   }
 
@@ -549,6 +610,9 @@ class ApplePayApp {
         }
         this.applePaySession = null;
       }
+      
+      // Reset initiation flag
+      this.isInitiating = false;
       
       this.showStatusMessage('Merchant validation failed. Please check your certificates.', 'error');
     }
@@ -597,6 +661,8 @@ class ApplePayApp {
         
         // Clear session reference after successful completion
         this.applePaySession = null;
+        // Reset initiation flag
+        this.isInitiating = false;
         
         this.showStatusMessage(
           `Payment successful! Transaction ID: ${data.transaction.id}`,
@@ -619,6 +685,9 @@ class ApplePayApp {
         // Clear session reference after completion
         this.applePaySession = null;
       }
+
+      // Reset initiation flag
+      this.isInitiating = false;
 
       const errorMessage = error.error?.message || error.message || 'Payment processing failed';
       this.showStatusMessage(`Payment failed: ${errorMessage}`, 'error');
