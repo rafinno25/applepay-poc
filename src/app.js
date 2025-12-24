@@ -627,13 +627,24 @@ class ApplePayApp {
         paymentToken: payment.token,
       });
 
+      // Build a plain JSON token so all required Apple Pay fields survive serialization.
+      const token = payment.token;
+      const paymentTokenForServer = {
+        paymentData: {
+          data: token?.paymentData?.data,
+          signature: token?.paymentData?.signature,
+          header: token?.paymentData?.header,
+          version: token?.paymentData?.version,
+        },
+      };
+
       const response = await fetch('/api/applepay/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          paymentToken: payment.token,
+          paymentToken: paymentTokenForServer,
           amount: this.paymentAmount,
           userId: this.userId,
           orderInfo: {

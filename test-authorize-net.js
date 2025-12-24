@@ -80,13 +80,15 @@ function escapeXml(str) {
 // Create XML request
 function createXmlRequest(applePayToken, amount, orderId, invoiceNumber) {
   // For Authorize.Net Apple Pay:
-  // dataValue should be paymentData.data (already Base64 encoded from Apple Pay)
-  // NOT the entire token JSON
-  const paymentDataValue = applePayToken.paymentData?.data;
-  
-  if (!paymentDataValue) {
-    throw new Error('Apple Pay token missing paymentData.data field');
+  // dataValue should be base64(JSON.stringify(token.paymentData))
+  // (includes data + header + signature + version needed for decryption)
+  const paymentData = applePayToken.paymentData;
+
+  if (!paymentData) {
+    throw new Error('Apple Pay token missing paymentData');
   }
+
+  const paymentDataValue = Buffer.from(JSON.stringify(paymentData), 'utf8').toString('base64');
 
   const xml = `<?xml version="1.0" encoding="utf-8"?>
 <createTransactionRequest xmlns="AnetApi/xml/v1/schema/AnetApiSchema.xsd">
