@@ -179,16 +179,15 @@ class AuthorizeNetService {
 
       // For Authorize.Net Apple Pay integration:
       // dataDescriptor must be "COMMON.APPLE.INAPP.PAYMENT"
-      // dataValue: According to Authorize.Net docs, we should send the paymentData.data field directly
-      // (it's already Base64 encoded from Apple Pay)
-      // Reference: https://developer.authorize.net/api/reference/features/apple_pay.html
-      
-      // Extract paymentData.data which is already Base64 encoded from Apple
-      const paymentDataValue = applePayToken.paymentData?.data;
-      
-      if (!paymentDataValue) {
-        throw new Error('Apple Pay token missing paymentData.data field');
+      // dataValue: Send the entire token.paymentData object (data + header + signature + version)
+      // as a base64-encoded JSON string. Gateways commonly need header/signature/version to decrypt.
+      const paymentData = applePayToken.paymentData;
+
+      if (!paymentData) {
+        throw new Error('Apple Pay token missing paymentData');
       }
+
+      const paymentDataValue = Buffer.from(JSON.stringify(paymentData), 'utf8').toString('base64');
 
       // Create transaction request
       // Authorize.Net limits:
@@ -216,7 +215,7 @@ class AuthorizeNetService {
         amount: amount.toFixed(2),
         // Authorize.Net requires this specific descriptor for Apple Pay
         dataDescriptor: 'COMMON.APPLE.INAPP.PAYMENT',
-        // paymentData.data is already Base64 encoded from Apple Pay
+        // base64(JSON.stringify(token.paymentData))
         dataValue: paymentDataValue,
         invoiceNumber: invoiceNumber,
         description: orderInfo.description || 'Apple Pay Payment',
